@@ -1,0 +1,4 @@
+server:
+  port: 9090
+  servlet:
+    application-display-name: Database API
