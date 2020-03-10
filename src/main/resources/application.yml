@@ -2,3 +2,8 @@ server:
   port: 9090
   servlet:
     application-display-name: Database API
+spring:
+  datasource:
+    url: jdbc:mysql://mysql-temp.cogpzavuvzxe.us-east-2.rds.amazonaws.com:3306/innodb?useSSL=false
+    username: mehmet_gunal
+    password: AMR_2020
