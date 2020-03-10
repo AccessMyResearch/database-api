@@ -1,12 +1,20 @@
 package com.amr.api.model;
 
+import lombok.Getter;
 import lombok.Value;
 
-@Value
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Getter
+@Entity
+@Table(name="Articles")
 public class Publication {
-    String publicationID;
-    String primaryAuthor;
+    @Id
+    String id;
+
     String title;
     String doi;
-    String link;
+    String url;
 }
