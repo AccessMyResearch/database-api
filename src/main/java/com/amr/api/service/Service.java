@@ -1,7 +1,11 @@
 package com.amr.api.service;
 
-import com.amr.api.model.PublicationAPIResponse;
+import com.amr.api.model.GetAuthorsAPIResponse;
+import com.amr.api.model.GetPublicationsAPIResponse;
+import com.amr.api.model.GetUsersAPIResponse;
 
 public interface Service {
-    PublicationAPIResponse getPublications();
+    GetPublicationsAPIResponse getPublications();
+    GetAuthorsAPIResponse getAuthors();
+    GetUsersAPIResponse getUsers();
 }

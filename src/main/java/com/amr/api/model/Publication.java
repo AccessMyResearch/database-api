@@ -9,10 +9,10 @@ import javax.persistence.Table;
 
 @Getter
 @Entity
-@Table(name="Articles")
+@Table(name="publications")
 public class Publication {
     @Id
-    String id;
+    int id;
 
     String title;
     String doi;

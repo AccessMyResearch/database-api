@@ -1,6 +1,8 @@
 package com.amr.api.controller;
 
-import com.amr.api.model.PublicationAPIResponse;
+import com.amr.api.model.GetAuthorsAPIResponse;
+import com.amr.api.model.GetPublicationsAPIResponse;
+import com.amr.api.model.GetUsersAPIResponse;
 import com.amr.api.service.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +18,26 @@ public class Controller {
     private final Service service;
 
     @GetMapping("/test")
-    public ResponseEntity<PublicationAPIResponse> test(){
-        PublicationAPIResponse publicationAPIResponse = service.getPublications();
-        return new ResponseEntity<>(publicationAPIResponse, HttpStatus.OK);
+    public ResponseEntity<GetPublicationsAPIResponse> test(){
+        GetPublicationsAPIResponse getPublicationsAPIResponse = service.getPublications();
+        return new ResponseEntity<>(getPublicationsAPIResponse, HttpStatus.OK);
+    }
+
+    @GetMapping("/getPublications")
+    public ResponseEntity<GetPublicationsAPIResponse> getPublications(){
+        GetPublicationsAPIResponse getPublicationsAPIResponse = service.getPublications();
+        return new ResponseEntity<>(getPublicationsAPIResponse, HttpStatus.OK);
+    }
+
+    @GetMapping("/getAuthors")
+    public ResponseEntity<GetAuthorsAPIResponse> getAuthors(){
+        GetAuthorsAPIResponse getAuthorsAPIResponse = service.getAuthors();
+        return new ResponseEntity<>(getAuthorsAPIResponse, HttpStatus.OK);
+    }
+
+    @GetMapping("/getUsers")
+    public ResponseEntity<GetUsersAPIResponse> getUsers(){
+        GetUsersAPIResponse getUsersAPIResponse = service.getUsers();
+        return new ResponseEntity<>(getUsersAPIResponse, HttpStatus.OK);
     }
 }

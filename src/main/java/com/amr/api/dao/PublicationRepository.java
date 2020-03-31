@@ -6,5 +6,5 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PublicationRepository extends JpaRepository<Publication, String> {
+public interface PublicationRepository extends JpaRepository<Publication, Integer> {
 }
