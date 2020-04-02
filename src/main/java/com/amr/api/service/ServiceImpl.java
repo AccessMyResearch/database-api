@@ -20,7 +20,7 @@ public class ServiceImpl implements com.amr.api.service.Service {
     @Override
     public GetPublicationsAPIResponse getPublications() {
         List<Publication> publications = dao.getPublications();
-        List<PublicationValues> publicationValues = publications.stream().map(publication -> new PublicationValues(publication.getTitle(), publication.getDoi(), publication.getUrl())).collect(Collectors.toList());
+        List<PublicationValues> publicationValues = publications.stream().map(publication -> new PublicationValues(publication.getTitle(), publication.getDoi(), publication.getUrl(), publication.getPublicationDate(), publication.getSummary())).collect(Collectors.toList());
         return new GetPublicationsAPIResponse(publicationValues);
     }
 

@@ -7,4 +7,6 @@ public class PublicationValues {
     String title;
     String doi;
     String url;
+    String publicationDate;
+    String summary;
 }
