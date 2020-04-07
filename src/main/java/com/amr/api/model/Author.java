@@ -12,10 +12,10 @@ import javax.persistence.Table;
 @Table(name="authors")
 public class Author {
     @Id
-    int id;
+    Integer id;
 
     @Column(name="user_id")
-    int userId;
+    Integer userId;
     @Column(name="orcid_id")
     String orcidId;
     String name;

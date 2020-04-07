@@ -12,7 +12,7 @@ import javax.persistence.Table;
 @Table(name="users")
 public class User {
     @Id
-    int id;
+    Integer id;
 
     String email;
 

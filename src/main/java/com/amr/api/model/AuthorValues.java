@@ -4,7 +4,7 @@ import lombok.Value;
 
 @Value
 public class AuthorValues {
-    int userId;
+    Integer userId;
     String orcidId;
     String name;
 }

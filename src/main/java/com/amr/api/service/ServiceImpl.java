@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,7 +21,10 @@ public class ServiceImpl implements com.amr.api.service.Service {
     @Override
     public GetPublicationsAPIResponse getPublications() {
         List<Publication> publications = dao.getPublications();
-        List<PublicationValues> publicationValues = publications.stream().map(publication -> new PublicationValues(publication.getTitle(), publication.getDoi(), publication.getUrl(), publication.getPublicationDate(), publication.getSummary())).collect(Collectors.toList());
+        List<PublicationValues> publicationValues = publications.stream().map(publication -> {
+            Set<String> authorNames = publication.getAuthors().stream().map(Author::getName).collect(Collectors.toSet());
+            return new PublicationValues(publication.getTitle(), publication.getDoi(), publication.getUrl(), publication.getPublicationDate(), publication.getSummary(), authorNames);
+        }).collect(Collectors.toList());
         return new GetPublicationsAPIResponse(publicationValues);
     }
 
