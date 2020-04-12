@@ -29,4 +29,34 @@ public class DAOImpl implements DAO {
     public List<User> getUsers() {
         return userRepository.findAll();
     }
+
+    @Override
+    public boolean addPublication(Publication publication){
+        publicationRepository.save(publication);
+        return true;
+    }
+
+    @Override
+    public boolean addUser(User user) {
+        userRepository.save(user);
+        return true;
+    }
+
+    @Override
+    public List<Publication> getPublicationsByAuthor(String authorName) {
+        Author author = authorRepository.findByName(authorName);
+        return publicationRepository.findAllByAuthorsContains(author);
+    }
+
+    @Override
+    public List<Publication> getPublicationsRecent() {
+        return publicationRepository.findAllByOrderByPublicationDateDesc();
+    }
+
+    @Override
+    public List<Publication> getPublicationsByYear(Integer startYear, Integer endYear) { //TODO Check clusivity by testing a publication on Dec. 31
+        String startDate = startYear.toString().concat("-01-01");
+        String endDate = endYear.toString().concat("-12-31");
+        return publicationRepository.findAllByPublicationDateBetween(startDate, endDate);
+    }
 }

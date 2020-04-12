@@ -10,4 +10,14 @@ public interface DAO {
     List<Publication> getPublications();
     List<Author> getAuthors();
     List<User> getUsers();
+
+    boolean addPublication(Publication publication);
+    boolean addUser(User user);
+
+    List<Publication> getPublicationsByAuthor(String authorName);
+
+    List<Publication> getPublicationsRecent();
+
+    List<Publication> getPublicationsByYear(Integer startYear, Integer endYear);
+
 }
