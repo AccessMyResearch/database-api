@@ -1,18 +1,20 @@
 package com.amr.api.dao;
 
-import com.amr.api.model.Author;
-import com.amr.api.model.Publication;
-import com.amr.api.model.User;
+import com.amr.api.model.*;
 
 import java.util.List;
 
 public interface DAO {
     List<Publication> getPublications();
+
+    List<Publication> getPublicationsNew(GetPublicationsRequest getPublicationsRequest);
+
     List<Author> getAuthors();
     List<User> getUsers();
 
-    boolean addPublication(Publication publication);
-    boolean addUser(User user);
+    Publication addPublication(Publication publication);
+    User addUser(User user);
+    Author addAuthor(Author author);
 
     List<Publication> getPublicationsByAuthor(String authorName);
 
@@ -20,4 +22,7 @@ public interface DAO {
 
     List<Publication> getPublicationsByYear(Integer startYear, Integer endYear);
 
+    List<Publication> getPublicationsFilter(FilterList filters);
+
+    User getUserByOpenId(String openId);
 }

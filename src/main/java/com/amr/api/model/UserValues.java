@@ -9,4 +9,5 @@ public class UserValues {
     String firstName;
     String middleName;
     String lastName;
+    String openId;
 }

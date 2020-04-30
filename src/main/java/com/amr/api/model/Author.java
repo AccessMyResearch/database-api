@@ -13,7 +13,7 @@ import javax.persistence.*;
 @Table(name="authors")
 public class Author {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
     @Column(name = "user_id", unique = true)

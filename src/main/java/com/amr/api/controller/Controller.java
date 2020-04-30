@@ -9,25 +9,49 @@ import org.springframework.web.bind.annotation.*;
 
 import static java.util.Objects.isNull;
 
+@CrossOrigin
 @RestController
 @RequiredArgsConstructor
 @Slf4j
 public class Controller {
     private final Service service;
 
-    @GetMapping("/getPublications")
-    public ResponseEntity<GetPublicationsAPIResponse> getPublications() {
-        GetPublicationsAPIResponse getPublicationsAPIResponse = service.getPublications();
+    private static final String openIdRegex = "[\\w-]{1,36}";
+
+    @PostMapping("/getPublicationsFilter")
+    public ResponseEntity<?> getPublicationsFilter(@RequestBody GetPublicationsRequest request) {
+        GetPublicationsAPIResponse response = service.getPublicationsFilter(request);
         return ResponseEntity
                 .ok()
-                .header("Access-Control-Allow-Origin", "*")
-                .body(getPublicationsAPIResponse);
+                .body(response);
+    }
+
+    @PostMapping("/getPublications")
+    public ResponseEntity<?> getPublications(@RequestBody GetPublicationsRequest request) {
+        GetPublicationsAPIResponse response = service.getPublicationsNew(request);
+        return ResponseEntity
+                .ok()
+                .body(response);
+    }
+
+    @GetMapping("/getUser/{openId}")
+    public ResponseEntity<?> getUserByOpenID(@PathVariable String openId) {
+        if(isNull(openId) || openId.isEmpty())
+            return ResponseEntity.badRequest().body("user open id must be specified");
+        if(!openId.matches(openIdRegex))
+            return ResponseEntity.badRequest().body("user open id must be valid open id format");
+        UserValues response = service.getUsersByOpenId(openId);
+        if(isNull(response))
+            return ResponseEntity.notFound().build();
+        return ResponseEntity
+                .ok()
+                .body(response);
     }
 
     @GetMapping("/getPublicationsByAuthor")
-    public ResponseEntity<GetPublicationsAPIResponse> getPublicationsByAuthor(@RequestParam("author") String authorName) {
-        if(isNull(authorName))
-            return ResponseEntity.badRequest().header("Access-Control-Allow-Origin", "*").build();
+    public ResponseEntity<?> getPublicationsByAuthor(@RequestParam("author") String authorName) {
+        if(isNull(authorName) || authorName.isEmpty())
+            return ResponseEntity.badRequest().header("Access-Control-Allow-Origin", "*").body("author name must be specified");
         GetPublicationsAPIResponse getPublicationsAPIResponse = service.getPublicationsByAuthor(authorName);
         if(isNull(getPublicationsAPIResponse))
             return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build(); //TODO Consider returning empty set, rather than not found
@@ -55,19 +79,6 @@ public class Controller {
                 .body(getPublicationsAPIResponse);
     }
 
-    @GetMapping("/getPublicationsByYear")
-    public ResponseEntity<GetPublicationsAPIResponse> getPublicationsByYear(@RequestParam("start_year") Integer startYear, @RequestParam("end_year") Integer endYear) {
-        if(isNull(startYear) || isNull(endYear) || endYear < startYear)
-            return ResponseEntity.badRequest().header("Access-Control-Allow-Origin", "*").build();
-        GetPublicationsAPIResponse getPublicationsAPIResponse = service.getPublicationsByYear(startYear, endYear);
-//        if(isNull(getPublicationsAPIResponse))
-//            return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build();
-        return ResponseEntity
-                .ok()
-                .header("Access-Control-Allow-Origin", "*")
-                .body(getPublicationsAPIResponse);
-    }
-
     @GetMapping("/getAuthors")
     public ResponseEntity<GetAuthorsAPIResponse> getAuthors() {
         GetAuthorsAPIResponse getAuthorsAPIResponse = service.getAuthors();
@@ -87,19 +98,35 @@ public class Controller {
     }
 
     @PostMapping("/addPublication")
-    public ResponseEntity<Boolean> addPublication(@RequestBody AddPublicationRequest request) {
+    public ResponseEntity<String> addPublication(@RequestBody AddPublicationRequest request) {
+        if(isNull(request.getTitle()) || request.getTitle().isEmpty())
+            return ResponseEntity
+                    .badRequest()
+                    .body("Title can not be null");
+
+        Publication publication = service.addPublication(request);
         return ResponseEntity
                 .ok()
                 .header("Access-Control-Allow-Origin", "*")
-                .body(true);
+                .body(publication.toString());
     }
 
     @PostMapping("/addUser")
-    public ResponseEntity<Boolean> addUser(@RequestBody AddUserRequest request) {
+    public ResponseEntity<String> addUser(@RequestBody AddUserRequest request) {
+        User user = service.addUser(request);
         return ResponseEntity
                 .ok()
                 .header("Access-Control-Allow-Origin", "*")
-                .body(true);
+                .body(user.toString());
+    }
+
+    @PostMapping("/addAuthor")
+    public ResponseEntity<String> addAuthor(@RequestBody AddAuthorRequest request) {
+        Author author = service.addAuthor(request);
+        return ResponseEntity
+                .ok()
+                .header("Access-Control-Allow-Origin", "*")
+                .body(author.toString());
     }
 
     /*TODO: Endpoints:

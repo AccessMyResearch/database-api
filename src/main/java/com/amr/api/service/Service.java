@@ -3,17 +3,20 @@ package com.amr.api.service;
 import com.amr.api.model.*;
 
 public interface Service {
+
     GetPublicationsAPIResponse getPublications();
+    GetPublicationsAPIResponse getPublicationsByAuthor(String authorName);
+    GetPublicationsAPIResponse getPublicationsRecent();
+    GetPublicationsAPIResponse getPublicationsMostViewed();
+    GetPublicationsAPIResponse getPublicationsByYear(Integer startYear, Integer endYear);
     GetAuthorsAPIResponse getAuthors();
     GetUsersAPIResponse getUsers();
-    boolean addPublication(AddPublicationRequest addPublicationRequest);
-    boolean addUser(AddUserRequest addUserRequest);
+    Publication addPublication(AddPublicationRequest addPublicationRequest);
+    User addUser(AddUserRequest addUserRequest);
+    Author addAuthor(AddAuthorRequest addAuthorRequest);
+    GetPublicationsAPIResponse getPublicationsFilter(GetPublicationsRequest request);
 
-    GetPublicationsAPIResponse getPublicationsByAuthor(String authorName);
+    GetPublicationsAPIResponse getPublicationsNew(GetPublicationsRequest request);
 
-    GetPublicationsAPIResponse getPublicationsRecent();
-
-    GetPublicationsAPIResponse getPublicationsMostViewed();
-
-    GetPublicationsAPIResponse getPublicationsByYear(Integer startYear, Integer endYear);
+    UserValues getUsersByOpenId(String openId);
 }
