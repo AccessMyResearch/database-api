@@ -9,4 +9,6 @@ public class AddPublicationRequest {
     String url;
     String publicationDate;
     String summary;
+
+    boolean autofill; // if true, missing fields are retrieved from Crossref API using DOI
 }

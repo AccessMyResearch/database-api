@@ -2,12 +2,19 @@ package com.amr.api.service;
 
 import com.amr.api.dao.DAO;
 import com.amr.api.model.*;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.crossref.CrossrefWorksResponse;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
@@ -62,9 +69,109 @@ public class ServiceImpl implements com.amr.api.service.Service {
     }
 
     @Override
-    public Publication addPublication(AddPublicationRequest addPublicationRequest) {
-        Publication publication = new Publication(null, addPublicationRequest.getTitle(), addPublicationRequest.getDoi(), addPublicationRequest.getUrl(), addPublicationRequest.getPublicationDate(), addPublicationRequest.getSummary(), null);
+    public Publication addPublication(AddPublicationRequest request) {
+        // normalize DOI
+        String title = request.getTitle();
+        String doi = request.getDoi();
+        String url = request.getUrl();
+        String pubDate = request.getPublicationDate();
+        String summary = request.getSummary();
+        if (!isNull(title)) {
+            title = title.trim();
+        }
+        if (!isNull(doi)) {
+            doi = doi.trim();
+            if (doi.endsWith("/"))
+                doi = doi.substring(0, doi.length() - 1);
+            doi = doi.substring(doi.lastIndexOf("doi.org/") + 1);
+        }
+        if (!isNull(url)) {
+            url = url.trim();
+        }
+        if (!isNull(pubDate)) {
+            pubDate = pubDate.trim();
+        }
+        if (!isNull(summary)) {
+            summary = summary.trim();
+        }
+
+        if (request.isAutofill()) {
+            List<CrossrefWorksResponse.WorksList.Item> autofillDataResponse;
+            try {
+                autofillDataResponse = getExternalPublicationsInfo(Collections.singleton(request.getDoi()));
+            } catch (Exception e) {
+                System.err.println(e);
+                e.printStackTrace(System.err);
+                return null; // TODO better error handling
+            }
+            if (autofillDataResponse.size() >= 1) {
+                final CrossrefWorksResponse.WorksList.Item autofillData = autofillDataResponse.get(0);
+                if (isNull(title) || title.isEmpty()) {
+                    if (!isNull(autofillData.getTitles()) && autofillData.getTitles().size() >= 1) {
+                        title = (autofillData.getTitles().get(0));
+                    }
+                }
+                // URL is not autofilled b/c Crossref links to publisher-provided URLs (AKA not open-access)
+                if (isNull(pubDate)) {
+                    if (!isNull(autofillData.getPublicationDate()) &&
+                            !isNull(autofillData.getPublicationDate().getDateParts()) &&
+                            autofillData.getPublicationDate().getDateParts().size() >= 1 &&
+                            !isNull(autofillData.getPublicationDate().getDateParts().get(0)) &&
+                            autofillData.getPublicationDate().getDateParts().get(0).size() >= 1) {
+                        final List<Integer> dateParts = autofillData.getPublicationDate().getDateParts().get(0);
+                        while (dateParts.size() < 3)
+                            dateParts.add(0);
+                        pubDate = String.format("%04d-%02d-%02d", dateParts.get(0), dateParts.get(1), dateParts.get(2));
+                    }
+                }
+                if (isNull(summary) || summary.isEmpty()) {
+                    if (!isNull(autofillData.getSummary()))
+                        summary = autofillData.getSummary();
+                }
+            }
+        }
+        Publication publication = new Publication(null, title, doi, url, pubDate, summary,null);
         return dao.addPublication(publication);
+    }
+
+    private List<CrossrefWorksResponse.WorksList.Item> getExternalPublicationsInfo(Collection<String> dois) throws IOException {
+        final ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        mapper.enable(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT);
+        mapper.enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
+
+        final String queryBase = "https://api.crossref.org/works?mailto=mehmet@accessmyresearch.org";
+        final String filterParam = dois.stream()
+                .map((doi) -> {
+                    doi = doi.trim();
+                    if (doi.endsWith("/"))
+                        doi = doi.substring(0, doi.length() - 1);
+                    doi = doi.substring(doi.lastIndexOf("doi.org/") + 1);
+                    return doi;
+                })
+                .filter((String doi) -> !isNull(doi) && !dois.isEmpty())
+                .map((String doi) -> "doi:" + URLEncoder.encode(doi))
+                .collect(Collectors.joining(","));
+        final URL url = new URL(queryBase + "&filter=" + filterParam + "&rows=" + dois.size());
+        final HttpURLConnection request = (HttpURLConnection) url.openConnection();
+        request.setRequestMethod("GET");
+        request.setRequestProperty("Accept", "application/json");
+        request.connect();
+        // TODO honor these headers
+//        request.getHeaderField("X-Rate-Limit-Limit");
+//        request.getHeaderField("X-Rate-Limit-Interval");
+        final CrossrefWorksResponse result = mapper.readValue(
+                request.getInputStream(),
+                CrossrefWorksResponse.class);
+        request.disconnect();
+        if (result.getMessageData().getItems() == null || result.getMessageData().getItems().size() == 0)
+            return new ArrayList<>(0);
+        List<CrossrefWorksResponse.WorksList.Item> ret = new ArrayList<>((int)result.getMessageData().getTotalResultCount());
+        ret.addAll(result.getMessageData().getItems());
+        while (ret.size() < result.getMessageData().getTotalResultCount()) {
+            break; // TODO handle partial requests
+        }
+        return ret;
     }
 
     @Override

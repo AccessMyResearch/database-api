@@ -99,11 +99,17 @@ public class Controller {
 
     @PostMapping("/addPublication")
     public ResponseEntity<String> addPublication(@RequestBody AddPublicationRequest request) {
-        if(isNull(request.getTitle()) || request.getTitle().isEmpty())
-            return ResponseEntity
-                    .badRequest()
-                    .body("Title can not be null");
-
+        if (request.isAutofill()) {
+            if (isNull(request.getDoi()) || request.getDoi().isEmpty())
+                return ResponseEntity
+                        .badRequest()
+                        .body("DOI can not be null");
+        } else {
+            if (isNull(request.getTitle()) || request.getTitle().isEmpty())
+                return ResponseEntity
+                        .badRequest()
+                        .body("Title can not be null");
+        }
         Publication publication = service.addPublication(request);
         return ResponseEntity
                 .ok()
