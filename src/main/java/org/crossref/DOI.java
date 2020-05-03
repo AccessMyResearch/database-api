@@ -1,6 +1,6 @@
 package org.crossref;
 
-import static com.amr.api.Utils.isNullOrEmpty;
+import static com.amr.Utils.isNullOrEmpty;
 
 public class DOI {
     private DOI() {

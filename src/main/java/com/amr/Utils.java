@@ -1,4 +1,4 @@
-package com.amr.api;
+package com.amr;
 
 import java.util.Collection;
 

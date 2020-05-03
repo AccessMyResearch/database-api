@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.amr.Utils.isNullOrEmpty;
 import static java.util.Objects.isNull;
 
 @CrossOrigin
@@ -38,12 +39,12 @@ public class Controller {
 
     @GetMapping("/getUser/{openId}")
     public ResponseEntity<?> getUserByOpenID(@PathVariable String openId) {
-        if(isNull(openId) || openId.isEmpty())
+        if (isNullOrEmpty(openId))
             return ResponseEntity.badRequest().body("user open id must be specified");
-        if(!openId.matches(openIdRegex))
+        if (!openId.matches(openIdRegex))
             return ResponseEntity.badRequest().body("user open id must be valid open id format");
         UserValues response = service.getUsersByOpenId(openId);
-        if(isNull(response))
+        if (isNull(response))
             return ResponseEntity.notFound().build();
         return ResponseEntity
                 .ok()
@@ -52,10 +53,10 @@ public class Controller {
 
     @GetMapping("/getPublicationsByAuthor")
     public ResponseEntity<?> getPublicationsByAuthor(@RequestParam("author") String authorName) {
-        if(isNull(authorName) || authorName.isEmpty())
+        if (isNullOrEmpty(authorName))
             return ResponseEntity.badRequest().header("Access-Control-Allow-Origin", "*").body("author name must be specified");
         GetPublicationsAPIResponse getPublicationsAPIResponse = service.getPublicationsByAuthor(authorName);
-        if(isNull(getPublicationsAPIResponse))
+        if (isNull(getPublicationsAPIResponse))
             return ResponseEntity.notFound().header("Access-Control-Allow-Origin", "*").build(); //TODO Consider returning empty set, rather than not found
         return ResponseEntity
                 .ok()
@@ -102,12 +103,12 @@ public class Controller {
     @PostMapping("/addPublication")
     public ResponseEntity<String> addPublication(@RequestBody AddPublicationRequest request) {
         if (request.isAutofill()) {
-            if (isNull(request.getDoi()) || request.getDoi().isEmpty())
+            if (isNullOrEmpty(request.getDoi()))
                 return ResponseEntity
                         .badRequest()
                         .body("DOI can not be null");
         } else {
-            if (isNull(request.getTitle()) || request.getTitle().isEmpty())
+            if (isNullOrEmpty(request.getTitle()))
                 return ResponseEntity
                         .badRequest()
                         .body("Title can not be null");
@@ -121,14 +122,14 @@ public class Controller {
 
     @PostMapping("/addPublications")
     public ResponseEntity<String> addPublications(@RequestBody List<AddPublicationRequest> requests) {
-        for (final AddPublicationRequest request: requests) {
+        for (final AddPublicationRequest request : requests) {
             if (request.isAutofill()) {
-                if (isNull(request.getDoi()) || request.getDoi().isEmpty())
+                if (isNullOrEmpty(request.getDoi()))
                     return ResponseEntity
                             .badRequest()
                             .body("DOI can not be null");
             } else {
-                if (isNull(request.getTitle()) || request.getTitle().isEmpty())
+                if (isNullOrEmpty(request.getTitle()))
                     return ResponseEntity
                             .badRequest()
                             .body("Title can not be null");

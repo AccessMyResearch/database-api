@@ -18,7 +18,7 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.amr.api.Utils.isNullOrEmpty;
+import static com.amr.Utils.isNullOrEmpty;
 import static java.util.Objects.isNull;
 
 @Service
@@ -73,7 +73,7 @@ public class ServiceImpl implements com.amr.api.service.Service {
     @Override
     public Publication addPublication(AddPublicationRequest request) {
         List<Publication> ret = addPublications(Collections.singletonList(request));
-        return isNull(ret) || ret.isEmpty() ? null : ret.get(0);
+        return isNullOrEmpty(ret) ? null : ret.get(0);
     }
 
     @Override
@@ -150,7 +150,7 @@ public class ServiceImpl implements com.amr.api.service.Service {
         final String queryBase = "https://api.crossref.org/works?mailto=mehmet@accessmyresearch.org";
         final String filterParam = dois.stream()
                 .map(DOI::canonical)
-                .filter((String doi) -> !isNull(doi) && !dois.isEmpty())
+                .filter((String doi) -> !isNullOrEmpty(doi))
                 .map((String doi) -> "doi:" + URLEncoder.encode(doi))
                 .collect(Collectors.joining(","));
         final URL url = new URL(queryBase + "&filter=" + filterParam + "&rows=" + dois.size());
@@ -169,9 +169,8 @@ public class ServiceImpl implements com.amr.api.service.Service {
         if (result.getMessageData().getItems() == null || result.getMessageData().getItems().isEmpty())
             return new HashMap<>(0);
         Map<String, CrossrefWorksResponse.WorksList.Item> ret = new HashMap<>();
-        for (final CrossrefWorksResponse.WorksList.Item item : result.getMessageData().getItems()) {
-            ret.put(item.getDoi(), item);
-        }
+        for (final CrossrefWorksResponse.WorksList.Item item : result.getMessageData().getItems())
+            ret.putIfAbsent(item.getDoi(), item);
         while (ret.size() < result.getMessageData().getTotalResultCount()) {
             break; // TODO handle partial requests
         }
@@ -200,7 +199,7 @@ public class ServiceImpl implements com.amr.api.service.Service {
     public GetPublicationsAPIResponse getPublicationsNew(GetPublicationsRequest request) {
         List<Publication> publications = dao.getPublicationsNew(request);
         if (!isNull(request.getSearchKeywords()))
-            publications.sort((publication1, publication2) -> keywordSearchComparator(publication1, publication2, request.getSearchKeywords()));
+            publications.sort(Comparator.comparingInt((Publication pub) -> keywordSearchWeightFunction(pub, request.getSearchKeywords())));
         return publicationToPublicationValue(publications);
     }
 
@@ -210,27 +209,23 @@ public class ServiceImpl implements com.amr.api.service.Service {
         return new UserValues(user.getEmail(), user.getOrcidId(), user.getFirstName(), user.getMiddleName(), user.getLastName(), user.getOpenId());
     }
 
-    private static int keywordSearchComparator(Publication publication1, Publication publication2, Set<String> keywords) {
-        return keywordSearchWeightFunction(publication2, keywords) - keywordSearchWeightFunction(publication1, keywords);
-    }
-
     private static int keywordSearchWeightFunction(Publication publication, Set<String> keywords) {
         return keywords.stream()
-                .map(keyword -> {
-                    int count = 0;
+                .mapToInt(keyword -> {
+                    int titleCount = 0;
                     int fromIndex = 0;
                     while ((fromIndex = publication.getTitle().indexOf(keyword, fromIndex)) != -1) {
-                        count++;
-                        fromIndex++;
+                        ++titleCount;
+                        fromIndex += keyword.length();
                     }
+                    int summaryCount = 0;
                     fromIndex = 0;
                     while ((fromIndex = publication.getSummary().indexOf(keyword, fromIndex)) != -1) {
-                        count++;
-                        fromIndex++;
+                        ++summaryCount;
+                        fromIndex += keyword.length();
                     }
-                    return count;
-                })
-                .reduce(0, (sum, count) -> sum += count);
+                    return titleCount + summaryCount;
+                }).sum();
     }
 
     private GetPublicationsAPIResponse publicationToPublicationValue(List<Publication> publications) {
