@@ -83,7 +83,7 @@ public class ServiceImpl implements com.amr.api.service.Service {
             doi = doi.trim();
             if (doi.endsWith("/"))
                 doi = doi.substring(0, doi.length() - 1);
-            doi = doi.substring(doi.lastIndexOf("doi.org/") + 1);
+            doi = doi.substring(doi.lastIndexOf("doi.org/") + "doi.org/".length());
         }
         if (!isNull(url)) {
             url = url.trim();
@@ -146,7 +146,7 @@ public class ServiceImpl implements com.amr.api.service.Service {
                     doi = doi.trim();
                     if (doi.endsWith("/"))
                         doi = doi.substring(0, doi.length() - 1);
-                    doi = doi.substring(doi.lastIndexOf("doi.org/") + 1);
+                    doi = doi.substring(doi.lastIndexOf("doi.org/") + "doi.org/".length());
                     return doi;
                 })
                 .filter((String doi) -> !isNull(doi) && !dois.isEmpty())
