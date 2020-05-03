@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.crossref.CrossrefWorksResponse;
+import org.crossref.DOI;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.amr.api.Utils.isNullOrEmpty;
 import static java.util.Objects.isNull;
 
 @Service
@@ -70,71 +72,76 @@ public class ServiceImpl implements com.amr.api.service.Service {
 
     @Override
     public Publication addPublication(AddPublicationRequest request) {
-        // normalize DOI
-        String title = request.getTitle();
-        String doi = request.getDoi();
-        String url = request.getUrl();
-        String pubDate = request.getPublicationDate();
-        String summary = request.getSummary();
-        if (!isNull(title)) {
-            title = title.trim();
-        }
-        if (!isNull(doi)) {
-            doi = doi.trim();
-            if (doi.endsWith("/"))
-                doi = doi.substring(0, doi.length() - 1);
-            doi = doi.substring(doi.lastIndexOf("doi.org/") + "doi.org/".length());
-        }
-        if (!isNull(url)) {
-            url = url.trim();
-        }
-        if (!isNull(pubDate)) {
-            pubDate = pubDate.trim();
-        }
-        if (!isNull(summary)) {
-            summary = summary.trim();
-        }
+        List<Publication> ret = addPublications(Collections.singletonList(request));
+        return isNull(ret) || ret.isEmpty() ? null : ret.get(0);
+    }
 
-        if (request.isAutofill()) {
-            List<CrossrefWorksResponse.WorksList.Item> autofillDataResponse;
+    @Override
+    public List<Publication> addPublications(List<AddPublicationRequest> requests) {
+        Set<String> autofillDois = requests.stream()
+                .filter(AddPublicationRequest::isAutofill)
+                .map(AddPublicationRequest::getDoi)
+                .map(DOI::canonical).collect(Collectors.toSet());
+        Map<String, CrossrefWorksResponse.WorksList.Item> autofillDataResponse;
+        if (autofillDois.isEmpty()) {
+            autofillDataResponse = Collections.emptyMap();
+        } else {
             try {
-                autofillDataResponse = getExternalPublicationsInfo(Collections.singleton(request.getDoi()));
+                autofillDataResponse = getExternalPublicationsInfo(autofillDois);
             } catch (Exception e) {
                 System.err.println(e);
                 e.printStackTrace(System.err);
                 return null; // TODO better error handling
             }
-            if (autofillDataResponse.size() >= 1) {
-                final CrossrefWorksResponse.WorksList.Item autofillData = autofillDataResponse.get(0);
-                if (isNull(title) || title.isEmpty()) {
-                    if (!isNull(autofillData.getTitles()) && autofillData.getTitles().size() >= 1) {
-                        title = (autofillData.getTitles().get(0));
-                    }
-                }
-                // URL is not autofilled b/c Crossref links to publisher-provided URLs (AKA not open-access)
-                if (isNull(pubDate)) {
-                    if (!isNull(autofillData.getPublicationDate()) &&
-                            !isNull(autofillData.getPublicationDate().getDateParts()) &&
-                            autofillData.getPublicationDate().getDateParts().size() >= 1 &&
-                            !isNull(autofillData.getPublicationDate().getDateParts().get(0)) &&
-                            autofillData.getPublicationDate().getDateParts().get(0).size() >= 1) {
-                        final List<Integer> dateParts = autofillData.getPublicationDate().getDateParts().get(0);
-                        while (dateParts.size() < 3)
-                            dateParts.add(0);
-                        pubDate = String.format("%04d-%02d-%02d", dateParts.get(0), dateParts.get(1), dateParts.get(2));
-                    }
-                }
-                if (isNull(summary) || summary.isEmpty()) {
-                    if (!isNull(autofillData.getSummary()))
-                        summary = autofillData.getSummary();
-                }
-            }
         }
-        Publication publication = new Publication(null, title, doi, url, pubDate, summary,null);
-        return dao.addPublication(publication);
+        return dao.addPublications(requests.stream()
+                .map((AddPublicationRequest request) -> {
+                    String title = request.getTitle();
+                    if (!isNullOrEmpty(title))
+                        title = title.trim();
+                    String doi = DOI.canonical(request.getDoi());
+                    String url = request.getUrl();
+                    if (!isNullOrEmpty(url))
+                        url = url.trim();
+                    String pubDate = request.getPublicationDate();
+                    if (!isNullOrEmpty(pubDate))
+                        pubDate = pubDate.trim();
+                    String summary = request.getSummary();
+                    if (!isNullOrEmpty(summary))
+                        summary = summary.trim();
+
+                    if (request.isAutofill()) {
+                        final CrossrefWorksResponse.WorksList.Item autofillData = autofillDataResponse.get(doi);
+                        if (isNull(autofillData))
+                            return null; // TODO better error handling
+
+                        if (isNullOrEmpty(title)) {
+                            if (!isNullOrEmpty(autofillData.getTitles())) {
+                                title = (autofillData.getTitles().get(0));
+                            }
+                        }
+                        // URL is not autofilled b/c Crossref links to publisher-provided URLs (AKA not open-access)
+                        if (isNullOrEmpty(pubDate)) {
+                            if (!isNull(autofillData.getPublicationDate()) &&
+                                    !isNullOrEmpty(autofillData.getPublicationDate().getDateParts()) &&
+                                    !isNullOrEmpty(autofillData.getPublicationDate().getDateParts().get(0))) {
+                                final List<Integer> dateParts = autofillData.getPublicationDate().getDateParts().get(0);
+                                while (dateParts.size() < 3)
+                                    dateParts.add(0);
+                                pubDate = String.format("%04d-%02d-%02d", dateParts.get(0), dateParts.get(1), dateParts.get(2));
+                            }
+                        }
+                        if (isNullOrEmpty(summary)) {
+                            if (!isNullOrEmpty(autofillData.getSummary()))
+                                summary = autofillData.getSummary();
+                        }
+                    }
+                    return new Publication(null, title, doi, url, pubDate, summary, null);
+                }).filter(Objects::nonNull)
+                ::iterator);
     }
 
-    private List<CrossrefWorksResponse.WorksList.Item> getExternalPublicationsInfo(Collection<String> dois) throws IOException {
+    private Map<String, CrossrefWorksResponse.WorksList.Item> getExternalPublicationsInfo(Collection<String> dois) throws IOException {
         final ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.enable(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT);
@@ -142,13 +149,7 @@ public class ServiceImpl implements com.amr.api.service.Service {
 
         final String queryBase = "https://api.crossref.org/works?mailto=mehmet@accessmyresearch.org";
         final String filterParam = dois.stream()
-                .map((doi) -> {
-                    doi = doi.trim();
-                    if (doi.endsWith("/"))
-                        doi = doi.substring(0, doi.length() - 1);
-                    doi = doi.substring(doi.lastIndexOf("doi.org/") + "doi.org/".length());
-                    return doi;
-                })
+                .map(DOI::canonical)
                 .filter((String doi) -> !isNull(doi) && !dois.isEmpty())
                 .map((String doi) -> "doi:" + URLEncoder.encode(doi))
                 .collect(Collectors.joining(","));
@@ -164,10 +165,13 @@ public class ServiceImpl implements com.amr.api.service.Service {
                 request.getInputStream(),
                 CrossrefWorksResponse.class);
         request.disconnect();
-        if (result.getMessageData().getItems() == null || result.getMessageData().getItems().size() == 0)
-            return new ArrayList<>(0);
-        List<CrossrefWorksResponse.WorksList.Item> ret = new ArrayList<>((int)result.getMessageData().getTotalResultCount());
-        ret.addAll(result.getMessageData().getItems());
+
+        if (result.getMessageData().getItems() == null || result.getMessageData().getItems().isEmpty())
+            return new HashMap<>(0);
+        Map<String, CrossrefWorksResponse.WorksList.Item> ret = new HashMap<>();
+        for (final CrossrefWorksResponse.WorksList.Item item : result.getMessageData().getItems()) {
+            ret.put(item.getDoi(), item);
+        }
         while (ret.size() < result.getMessageData().getTotalResultCount()) {
             break; // TODO handle partial requests
         }

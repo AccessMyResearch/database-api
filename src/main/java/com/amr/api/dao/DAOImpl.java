@@ -115,8 +115,15 @@ public class DAOImpl implements DAO {
     }
 
     @Override
-    public Publication addPublication(Publication publication){
+    public Publication addPublication(Publication publication) {
         return publicationRepository.saveAndFlush(publication);
+    }
+
+    @Override
+    public List<Publication> addPublications(Iterable<Publication> publications) {
+        List<Publication> ret = publicationRepository.saveAll(publications);
+        publicationRepository.flush();
+        return ret;
     }
 
     @Override

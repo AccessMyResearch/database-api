@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 import static java.util.Objects.isNull;
 
 @CrossOrigin
@@ -111,6 +113,28 @@ public class Controller {
                         .body("Title can not be null");
         }
         Publication publication = service.addPublication(request);
+        return ResponseEntity
+                .ok()
+                .header("Access-Control-Allow-Origin", "*")
+                .body(publication.toString());
+    }
+
+    @PostMapping("/addPublications")
+    public ResponseEntity<String> addPublications(@RequestBody List<AddPublicationRequest> requests) {
+        for (final AddPublicationRequest request: requests) {
+            if (request.isAutofill()) {
+                if (isNull(request.getDoi()) || request.getDoi().isEmpty())
+                    return ResponseEntity
+                            .badRequest()
+                            .body("DOI can not be null");
+            } else {
+                if (isNull(request.getTitle()) || request.getTitle().isEmpty())
+                    return ResponseEntity
+                            .badRequest()
+                            .body("Title can not be null");
+            }
+        }
+        List<Publication> publication = service.addPublications(requests);
         return ResponseEntity
                 .ok()
                 .header("Access-Control-Allow-Origin", "*")

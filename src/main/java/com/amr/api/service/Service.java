@@ -2,6 +2,8 @@ package com.amr.api.service;
 
 import com.amr.api.model.*;
 
+import java.util.List;
+
 public interface Service {
 
     GetPublicationsAPIResponse getPublications();
@@ -12,6 +14,7 @@ public interface Service {
     GetAuthorsAPIResponse getAuthors();
     GetUsersAPIResponse getUsers();
     Publication addPublication(AddPublicationRequest addPublicationRequest);
+    List<Publication> addPublications(List<AddPublicationRequest> addPublicationRequests);
     User addUser(AddUserRequest addUserRequest);
     Author addAuthor(AddAuthorRequest addAuthorRequest);
     GetPublicationsAPIResponse getPublicationsFilter(GetPublicationsRequest request);

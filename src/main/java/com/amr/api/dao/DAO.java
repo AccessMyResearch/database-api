@@ -13,6 +13,7 @@ public interface DAO {
     List<User> getUsers();
 
     Publication addPublication(Publication publication);
+    List<Publication> addPublications(Iterable<Publication> publication);
     User addUser(User user);
     Author addAuthor(Author author);
 
