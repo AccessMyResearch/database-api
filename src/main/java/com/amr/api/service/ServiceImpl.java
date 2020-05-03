@@ -2,9 +2,6 @@ package com.amr.api.service;
 
 import com.amr.api.dao.DAO;
 import com.amr.api.model.*;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.crossref.CrossrefWorksResponse;
@@ -12,9 +9,6 @@ import org.crossref.DOI;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -142,36 +136,21 @@ public class ServiceImpl implements com.amr.api.service.Service {
     }
 
     private Map<String, CrossrefWorksResponse.WorksList.Item> getExternalPublicationsInfo(Collection<String> dois) throws IOException {
-        final ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        mapper.enable(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT);
-        mapper.enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
-
-        final String queryBase = "https://api.crossref.org/works?mailto=mehmet@accessmyresearch.org";
-        final String filterParam = dois.stream()
+        final List<Map.Entry<String, String>> filterParams = dois.stream()
                 .map(DOI::canonical)
                 .filter((String doi) -> !isNullOrEmpty(doi))
-                .map((String doi) -> "doi:" + URLEncoder.encode(doi))
-                .collect(Collectors.joining(","));
-        final URL url = new URL(queryBase + "&filter=" + filterParam + "&rows=" + dois.size());
-        final HttpURLConnection request = (HttpURLConnection) url.openConnection();
-        request.setRequestMethod("GET");
-        request.setRequestProperty("Accept", "application/json");
-        request.connect();
-        // TODO honor these headers
-//        request.getHeaderField("X-Rate-Limit-Limit");
-//        request.getHeaderField("X-Rate-Limit-Interval");
-        final CrossrefWorksResponse result = mapper.readValue(
-                request.getInputStream(),
-                CrossrefWorksResponse.class);
-        request.disconnect();
+                .map((String doi) -> new AbstractMap.SimpleImmutableEntry<String, String>("doi", doi))
+                .collect(Collectors.toList());
+        final Map<String, String> params = new HashMap<>();
+        params.put("rows", "" + filterParams.size());
+        CrossrefWorksResponse response = CrossrefWorksResponse.fromWeb(params, filterParams);
 
-        if (result.getMessageData().getItems() == null || result.getMessageData().getItems().isEmpty())
+        if (isNullOrEmpty(response.getMessageData().getItems()))
             return new HashMap<>(0);
         Map<String, CrossrefWorksResponse.WorksList.Item> ret = new HashMap<>();
-        for (final CrossrefWorksResponse.WorksList.Item item : result.getMessageData().getItems())
+        for (final CrossrefWorksResponse.WorksList.Item item : response.getMessageData().getItems())
             ret.putIfAbsent(item.getDoi(), item);
-        while (ret.size() < result.getMessageData().getTotalResultCount()) {
+        while (ret.size() < response.getMessageData().getTotalResultCount()) {
             break; // TODO handle partial requests
         }
         return ret;

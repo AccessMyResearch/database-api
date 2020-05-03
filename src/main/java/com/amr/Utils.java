@@ -1,6 +1,7 @@
 package com.amr;
 
 import java.util.Collection;
+import java.util.Map;
 
 import static java.util.Objects.isNull;
 
@@ -14,6 +15,10 @@ public class Utils {
     }
 
     public static boolean isNullOrEmpty(final Collection obj) {
+        return isNull(obj) || obj.isEmpty();
+    }
+
+    public static boolean isNullOrEmpty(final Map obj) {
         return isNull(obj) || obj.isEmpty();
     }
 }
