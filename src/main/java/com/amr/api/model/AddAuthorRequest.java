@@ -1,10 +1,13 @@
 package com.amr.api.model;
 
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@Value
+import java.beans.ConstructorProperties;
+import java.util.List;
+
+@Data
+@AllArgsConstructor
 public class AddAuthorRequest {
-    Integer userId;
-    String orcidId;
-    String name;
+    private List<AddAuthorRequestItem> items;
 }

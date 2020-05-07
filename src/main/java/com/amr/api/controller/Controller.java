@@ -100,64 +100,31 @@ public class Controller {
                 .body(getUsersAPIResponse);
     }
 
-    @PostMapping("/addPublication")
-    public ResponseEntity<String> addPublication(@RequestBody AddPublicationRequest request) {
-        if (request.isAutofill()) {
-            if (isNullOrEmpty(request.getDoi()))
-                return ResponseEntity
-                        .badRequest()
-                        .body("DOI can not be null");
-        } else {
-            if (isNullOrEmpty(request.getTitle()))
-                return ResponseEntity
-                        .badRequest()
-                        .body("Title can not be null");
-        }
-        Publication publication = service.addPublication(request);
+    @PostMapping(value = "/addPublications", produces = "application/json")
+    public ResponseEntity<List<Publication>> addPublications(@RequestBody AddPublicationRequest request) {
+        List<Publication> publication = service.addPublications(request);
         return ResponseEntity
                 .ok()
                 .header("Access-Control-Allow-Origin", "*")
-                .body(publication.toString());
+                .body(publication);
     }
 
-    @PostMapping("/addPublications")
-    public ResponseEntity<String> addPublications(@RequestBody List<AddPublicationRequest> requests) {
-        for (final AddPublicationRequest request : requests) {
-            if (request.isAutofill()) {
-                if (isNullOrEmpty(request.getDoi()))
-                    return ResponseEntity
-                            .badRequest()
-                            .body("DOI can not be null");
-            } else {
-                if (isNullOrEmpty(request.getTitle()))
-                    return ResponseEntity
-                            .badRequest()
-                            .body("Title can not be null");
-            }
-        }
-        List<Publication> publication = service.addPublications(requests);
-        return ResponseEntity
-                .ok()
-                .header("Access-Control-Allow-Origin", "*")
-                .body(publication.toString());
-    }
-
-    @PostMapping("/addUser")
-    public ResponseEntity<String> addUser(@RequestBody AddUserRequest request) {
+    @PostMapping(value = "/addUser", produces = "application/json")
+    public ResponseEntity<User> addUser(@RequestBody AddUserRequest request) {
         User user = service.addUser(request);
         return ResponseEntity
                 .ok()
                 .header("Access-Control-Allow-Origin", "*")
-                .body(user.toString());
+                .body(user);
     }
 
-    @PostMapping("/addAuthor")
-    public ResponseEntity<String> addAuthor(@RequestBody AddAuthorRequest request) {
-        Author author = service.addAuthor(request);
+    @PostMapping(value = "/addAuthors", produces = "application/json")
+    public ResponseEntity<List<Author>> addAuthors(@RequestBody AddAuthorRequest request) {
+        List<Author> authors = service.addAuthors(request);
         return ResponseEntity
                 .ok()
                 .header("Access-Control-Allow-Origin", "*")
-                .body(author.toString());
+                .body(authors);
     }
 
     /*TODO: Endpoints:

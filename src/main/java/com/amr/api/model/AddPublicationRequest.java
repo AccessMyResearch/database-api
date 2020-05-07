@@ -1,14 +1,14 @@
 package com.amr.api.model;
 
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@Value
+import java.beans.ConstructorProperties;
+import java.util.List;
+
+@Data
+@AllArgsConstructor
 public class AddPublicationRequest {
-    String title;
-    String doi;
-    String url;
-    String publicationDate;
-    String summary;
-
-    boolean autofill; // if true, missing fields are retrieved from Crossref API using DOI
+    private List<AddPublicationRequestItem> items;
+    private AddRequestBehavior behavior;
 }

@@ -13,10 +13,9 @@ public interface Service {
     GetPublicationsAPIResponse getPublicationsByYear(Integer startYear, Integer endYear);
     GetAuthorsAPIResponse getAuthors();
     GetUsersAPIResponse getUsers();
-    Publication addPublication(AddPublicationRequest addPublicationRequest);
-    List<Publication> addPublications(List<AddPublicationRequest> addPublicationRequests);
+    List<Publication> addPublications(AddPublicationRequest addPublicationRequest);
     User addUser(AddUserRequest addUserRequest);
-    Author addAuthor(AddAuthorRequest addAuthorRequest);
+    List<Author> addAuthors(AddAuthorRequest addAuthorRequest);
     GetPublicationsAPIResponse getPublicationsFilter(GetPublicationsRequest request);
 
     GetPublicationsAPIResponse getPublicationsNew(GetPublicationsRequest request);
